@@ -1329,6 +1329,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
     local glowTypesExcepButtonOverlayAndProc = CopyTable(OptionsPrivate.Private.glow_types)
     glowTypesExcepButtonOverlayAndProc["buttonOverlay"] = nil
     glowTypesExcepButtonOverlayAndProc["Proc"] = nil
+	glowTypesExcepButtonOverlayAndProc["Rainbow"] = nil
 
     args["condition" .. i .. "value" .. j .. "glow_action"] = {
       type = "select",
@@ -1373,12 +1374,21 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
       end
     }
     order = order + 1
-    args["condition" .. i .. "value" .. j .. "glow_frame"] = {
+	local glowFrameKey = "condition" .. i .. "value" .. j .. "glow_frame"
+    args[glowFrameKey] = {
       type = "input",
       width = WeakAuras.normalWidth,
       name = blueIfNoValue2(data, conditions[i].changes[j], "value", "glow_frame", L["Frame"], L["Frame"]),
       desc = descIfNoValue2(data, conditions[i].changes[j], "value", "glow_frame", propertyType),
       order = order,
+      control = "WeakAurasInputWithIndentation",
+      -- 1. THE REGISTRY FIX: We use OnShow to ensure the widget is tracked immediately
+      callbacks = {
+        OnShow = function(widget)
+          if not OptionsPrivate.conditionWidgets then OptionsPrivate.conditionWidgets = {} end
+          OptionsPrivate.conditionWidgets[glowFrameKey] = widget
+        end
+      },
       get = function()
         return type(conditions[i].changes[j].value) == "table" and conditions[i].changes[j].value.glow_frame;
       end,
@@ -1395,7 +1405,15 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
       desc = descIfNoValue2(data, conditions[i].changes[j], "value", "glow_frame", propertyType),
       order = order,
       func = function()
-        OptionsPrivate.StartFrameChooser(data, {"conditions", i, "changes", j, "value", "glow_frame"});
+        -- 2. THE CLAIM FIX: When you click Choose, we grab the specific widget
+        -- for THIS condition row and tell the global previewer to use it.
+        local widget = OptionsPrivate.conditionWidgets and OptionsPrivate.conditionWidgets[glowFrameKey]
+        if widget then
+          OptionsPrivate.previewGlowFrameWidget = widget
+        end
+
+        -- 3. Start the Chooser
+        OptionsPrivate.StartFrameChooser(data, {conditionVariable, i, "changes", j, "value", "glow_frame"});
       end,
       hidden = function()
         return not anyGlowExternal("glow_frame_type", "FRAMESELECTOR")
@@ -1431,10 +1449,9 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
         return 1, 1, 1, 1;
       end,
       set = setValueColorComplex("glow_color"),
-      hidden = function()
-        return not (anyGlowExternal("glow_action", "show")
-                    and anyGlowExternal("glow_frame_type", OptionsPrivate.Private.glow_frame_types)
-                    and anyGlowExternal("glow_type", OptionsPrivate.Private.glow_types))
+	hidden = function()
+        return not (anyGlowExternal("glow_action", "show") 
+                and anyGlowExternal("glow_type", glowTypesWithColors))
       end,
       disabled = function() return not anyGlowExternal("use_glow_color", true) end
     }
@@ -1449,8 +1466,9 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
         return type(conditions[i].changes[j].value) == "table" and conditions[i].changes[j].value.glow_startAnim;
       end,
       set = setValueComplex("glow_startAnim"),
-      hidden = function()
-        return not (anyGlowExternal("glow_action", "show") and anyGlowExternal("glow_type", "Proc"))
+hidden = function()
+        return not (anyGlowExternal("glow_action", "show") 
+                and (anyGlowExternal("glow_type", "Proc") or anyGlowExternal("glow_type", "Rainbow")))
       end
     }
     order = order + 1
@@ -1487,8 +1505,9 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
         return type(conditions[i].changes[j].value) == "table" and conditions[i].changes[j].value.glow_lines or 8;
       end,
       set = setValueComplex("glow_lines"),
-      hidden = function()
-        return not (anyGlowExternal("glow_action", "show") and anyGlowExternal("glow_type", glowTypesExcepButtonOverlayAndProc))
+ hidden = function()
+        return not (anyGlowExternal("glow_action", "show") 
+                and anyGlowExternal("glow_type", glowTypesWithLines))
       end,
     }
     order = order + 1

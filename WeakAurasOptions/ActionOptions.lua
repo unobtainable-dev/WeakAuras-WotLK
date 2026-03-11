@@ -21,6 +21,19 @@ end
 ---  a sound from each setter
 local lastPlayedSoundFromSet
 
+function OptionsPrivate.SetGlowFramePreview(text)
+  local widget = OptionsPrivate.previewGlowFrameWidget
+  if not widget then return end
+
+  local editbox =
+      widget.editbox or
+      (widget.frame and widget.frame.editbox)
+
+  if editbox then
+    editbox:SetText(text)
+  end
+end
+
 function OptionsPrivate.GetActionOptions(data)
   local action = {
     type = "group",
@@ -391,16 +404,22 @@ function OptionsPrivate.GetActionOptions(data)
           or data.actions.start.glow_frame_type == nil
         end,
       },
-      start_glow_frame = {
-        type = "input",
-        width = WeakAuras.normalWidth,
-        name = L["Frame"],
-        order = 10.5,
-        hidden = function()
-          return not data.actions.start.do_glow
-          or data.actions.start.glow_frame_type ~= "FRAMESELECTOR"
-        end
-      },
+	  start_glow_frame = {
+	  type = "input",
+	  width = WeakAuras.normalWidth,
+	  name = L["Frame"],
+	  order = 10.5,
+	  control = "WeakAurasInputWithIndentation",
+	  hidden = function()
+	 	 return not data.actions.start.do_glow
+	 	 or data.actions.start.glow_frame_type ~= "FRAMESELECTOR"
+	  end,
+	  callbacks = {
+	 	 OnShow = function(widget)
+	 	 OptionsPrivate.previewGlowFrameWidget = widget
+	 	 end
+	  }
+	  },
       start_choose_glow_frame = {
         type = "execute",
         width = WeakAuras.normalWidth,
@@ -930,16 +949,22 @@ function OptionsPrivate.GetActionOptions(data)
           or data.actions.finish.glow_frame_type == nil
         end,
       },
-      finish_glow_frame = {
-        type = "input",
-        width = WeakAuras.normalWidth,
-        name = L["Frame"],
-        order = 30.5,
-        hidden = function()
-          return not data.actions.finish.do_glow
-          or data.actions.finish.glow_frame_type ~= "FRAMESELECTOR"
-        end
-      },
+	  finish_glow_frame = {
+	  type = "input",
+	  width = WeakAuras.normalWidth,
+	  name = L["Frame"],
+	  order = 10.5,
+	  control = "WeakAurasInputWithIndentation",
+	  hidden = function()
+		  return not data.actions.finish.do_glow
+		  or data.actions.finish.glow_frame_type ~= "FRAMESELECTOR"
+	  end,
+	  callbacks = {
+		  OnShow = function(widget)
+		  OptionsPrivate.previewGlowFrameWidget = widget
+		  end
+	  }
+	  },
       finish_choose_glow_frame = {
         type = "execute",
         width = WeakAuras.normalWidth,
