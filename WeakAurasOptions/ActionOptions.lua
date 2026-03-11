@@ -953,7 +953,7 @@ function OptionsPrivate.GetActionOptions(data)
 	  type = "input",
 	  width = WeakAuras.normalWidth,
 	  name = L["Frame"],
-	  order = 10.5,
+	  order = 30.5,
 	  control = "WeakAurasInputWithIndentation",
 	  hidden = function()
 		  return not data.actions.finish.do_glow
